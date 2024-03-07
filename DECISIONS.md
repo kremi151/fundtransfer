@@ -20,3 +20,23 @@ To still provide an adequate data management, I opted for an in-memory H2 databa
 
 For the schema management, one would normally use tools like Liquibase or Flyway to handle schema versioning.
 Since the data model is quite simple, I opted to let the schema be automatically created and managed by Hibernate instead.
+
+## Synchronization of exchange rates
+
+Exchange rates are taken from external services, and should stay up-to-date with real-world fluctuations of the market.
+What I wanted to avoid is that the application needs to perform one API call to said external services for every incoming money transfer request.
+While this may not be a problem when only having a few transfer requests every once in a while, it could become problematic when many requests take place at the same time, over a longer period of time.
+Potential issues would be performance bottleneck, since every incoming request would need to wait for an additional outgoing request to the external service.
+Also, rate limitations on external services may reduce access after a while due to too many requests within a short time frame.
+
+To solve this, I opted for having caching the exchange rates locally in-memory, and refresh them every 5 minutes (which is configurable).
+This should maintain an acceptable balance between reducing the amount of outgoing requests to external services and having up-to-date exchange rates.
+
+## Account IDs
+
+The account IDs should be numeric.
+To avoid having a sequence for the IDs that starts at 1, and just increments for every further created account (which could disclose information about how many accounts exist within the system),
+I opted for having a 9-digit ID, which is randomly generated for every created account.
+
+Within the database, this ID is stored as a plain integer (which can fit numbers with up to 9 digits).
+Users of the REST API will always see this ID as a 9-digit number in form of a string, which is padded with leading zeros if necessary.
