@@ -1,5 +1,6 @@
 package lu.mkremer.fundstransfer.service.impl
 
+import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
 import lu.mkremer.fundstransfer.exception.ServiceNotReadyException
 import lu.mkremer.fundstransfer.exception.UnsupportedCurrencyException
 import lu.mkremer.fundstransfer.service.CurrencyExchanger
@@ -28,17 +29,16 @@ class CurrencyExchangerFrankfurter(
     override fun supportsCurrency(currency: String): Boolean = rates?.containsKey(currency) ?: false
 
     override fun convert(
-        fromAmount: BigDecimal,
-        fromCurrency: String,
+        amount: MonetaryAmountDTO,
         toCurrency: String
     ): BigDecimal = rates?.let {
-        if (fromCurrency == toCurrency) {
-            fromAmount
+        if (amount.currency == toCurrency) {
+            amount.amount
         } else {
             // First, we need to find a common ground before we can do the conversion.
             // For this, we choose the base currency of the external service.
-            val rateOfSourceCurrency = it[fromCurrency] ?: throw UnsupportedCurrencyException(fromCurrency)
-            val baseAmount = fromAmount.divide(BigDecimal(rateOfSourceCurrency), 4, RoundingMode.HALF_UP)
+            val rateOfSourceCurrency = it[amount.currency] ?: throw UnsupportedCurrencyException(amount.currency)
+            val baseAmount = amount.amount.divide(BigDecimal(rateOfSourceCurrency), 4, RoundingMode.HALF_UP)
 
             // Second, we can now convert the amount from the base currency to the
             // target currency

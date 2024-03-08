@@ -1,6 +1,8 @@
 package lu.mkremer.fundstransfer.service.impl
 
 import jakarta.annotation.PostConstruct
+import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
+import lu.mkremer.fundstransfer.exception.UnsupportedCurrencyException
 import lu.mkremer.fundstransfer.service.CurrencyExchanger
 import lu.mkremer.fundstransfer.service.FundTransferService
 import org.slf4j.LoggerFactory
@@ -38,9 +40,23 @@ class FundTransferServiceImpl @Autowired constructor(
     fun updateExchangeRates() {
         exchangers.forEach {
             updaterExecutor.submit {
+                // TODO: Immutability?
                 it.update()
             }
         }
+    }
+
+    override fun convert(monetaryAmount: MonetaryAmountDTO, targetCurrency: String): MonetaryAmountDTO {
+        // TODO: Could we improve this by caching which exchanger handles which currencies?
+        exchangers.forEach {
+            if (it.supportsCurrency(monetaryAmount.currency) && it.supportsCurrency(targetCurrency)) {
+                return MonetaryAmountDTO(
+                    amount = it.convert(monetaryAmount, targetCurrency),
+                    currency = targetCurrency,
+                )
+            }
+        }
+        throw UnsupportedCurrencyException(targetCurrency) // TODO: What about source currency?
     }
 
 }
