@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import lu.mkremer.fundstransfer.datamodel.dto.AccountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
-import lu.mkremer.fundstransfer.datamodel.request.DepositMoneyRequest
+import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
 import lu.mkremer.fundstransfer.service.TransactionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.PostMapping
@@ -58,8 +58,42 @@ class TransactionController {
                 content = [Content()]
             ),
         ])
-    fun depositMoney(@Valid @RequestBody request: DepositMoneyRequest): AccountDTO {
+    fun depositMoney(@Valid @RequestBody request: AccountBalanceRequest): AccountDTO {
         return transactionService.depositMoney(request)
+    }
+
+    @PostMapping("/withdraw")
+    @Operation(summary = "Withdraw money from an account")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "The amount of money was withdrawn",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AccountDTO::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Invalid input supplied",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ValidationErrorDTO::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Account not found",
+                content = [Content()]
+            ),
+        ])
+    fun withdrawMoney(@Valid @RequestBody request: AccountBalanceRequest): AccountDTO {
+        return transactionService.withdrawMoney(request)
     }
 
 }

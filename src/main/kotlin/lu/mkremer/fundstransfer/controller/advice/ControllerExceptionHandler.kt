@@ -1,6 +1,7 @@
 package lu.mkremer.fundstransfer.controller.advice
 
 import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
+import lu.mkremer.fundstransfer.exception.InsufficientBalanceException
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -24,15 +25,34 @@ class ControllerExceptionHandler {
             .badRequest()
             .body(
                 ValidationErrorDTO(
-                    errors = e.fieldErrors.associate {
+                    message = "At least one submitted property has an invalid value",
+                    fieldErrors = e.fieldErrors.associate {
                         it.field to (it.defaultMessage ?: "Unknown error")
                     },
                 )
             )
     }
 
+    /**
+     * A handler for missing items, returning a simple 404 Not Found response.
+     * This is especially convenient when using [java.util.Optional.orElseThrow].
+     */
     @ExceptionHandler(NoSuchElementException::class)
     fun handleNoSuchElementException(e: NoSuchElementException): ResponseEntity<Unit> {
         return ResponseEntity.notFound().build()
+    }
+
+    /**
+     * A handler to deal with situations where more money is attempted to be withdrawn
+     * or transferred from an account than actually available.
+     * Returns a 400 Bad Request response with an error message.
+     */
+    @ExceptionHandler(InsufficientBalanceException::class)
+    fun handleInsufficientBalanceException(e: InsufficientBalanceException): ResponseEntity<ValidationErrorDTO> {
+        return ResponseEntity
+            .badRequest()
+            .body(
+                ValidationErrorDTO(message = "Account ${e.accountId} has insufficient balance: ${e.missing} ${e.currency} are missing")
+            )
     }
 }
