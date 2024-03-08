@@ -10,6 +10,7 @@ import jakarta.validation.Valid
 import lu.mkremer.fundstransfer.datamodel.dto.AccountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
 import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
+import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
 import lu.mkremer.fundstransfer.service.TransactionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.PostMapping
@@ -94,6 +95,43 @@ class TransactionController {
         ])
     fun withdrawMoney(@Valid @RequestBody request: AccountBalanceRequest): AccountDTO {
         return transactionService.withdrawMoney(request)
+    }
+
+    @PostMapping("/transfer")
+    @Operation(summary = "Transfer money from one account to another")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "The amount of money was transferred",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(
+                            implementation = AccountDTO::class,
+                            description = "The source account after the money transfer was processed"
+                        ),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Invalid input supplied",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ValidationErrorDTO::class),
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Account not found", // TODO: How to differentiate between source and target?
+                content = [Content()]
+            ),
+        ])
+    fun transferMoney(@Valid @RequestBody request: MoneyTransferRequest): AccountDTO {
+        return transactionService.transferMoney(request)
     }
 
 }
