@@ -64,13 +64,13 @@ class TransactionTests {
 		}
 
 		testMoneyTransfer(
-			sourceAccountCurrency = "EUR",
-			targetAccountCurrency = "EUR",
+			debitAccountCurrency = "EUR",
+			creditAccountCurrency = "EUR",
 			initialDeposit = MonetaryAmountDTO(100.0, "EUR"),
 			transfer = MonetaryAmountDTO(25.0, "EUR"),
 			expectedInitialBalanceAfterDeposit = BigDecimal("100.00"),
-			expectedSourceBalanceAfterTransfer = BigDecimal("75.00"),
-			expectedTargetBalanceAfterTransfer = BigDecimal("25.00"),
+			expectedDebitAccountBalanceAfterTransfer = BigDecimal("75.00"),
+			expectedCreditAccountBalanceAfterTransfer = BigDecimal("25.00"),
 		)
 	}
 
@@ -102,13 +102,13 @@ class TransactionTests {
 		}
 
 		testMoneyTransfer(
-			sourceAccountCurrency = "JPY",
-			targetAccountCurrency = "JPY",
+			debitAccountCurrency = "JPY",
+			creditAccountCurrency = "JPY",
 			initialDeposit = MonetaryAmountDTO(100.0, "EUR"),
 			transfer = MonetaryAmountDTO(50.0, "EUR"),
 			expectedInitialBalanceAfterDeposit = BigDecimal("16050.00"),
-			expectedSourceBalanceAfterTransfer = BigDecimal("8025.00"),
-			expectedTargetBalanceAfterTransfer = BigDecimal("8025.00"),
+			expectedDebitAccountBalanceAfterTransfer = BigDecimal("8025.00"),
+			expectedCreditAccountBalanceAfterTransfer = BigDecimal("8025.00"),
 		)
 	}
 
@@ -143,50 +143,50 @@ class TransactionTests {
 		}
 
 		testMoneyTransfer(
-			sourceAccountCurrency = "CHF",
-			targetAccountCurrency = "JPY",
+			debitAccountCurrency = "CHF",
+			creditAccountCurrency = "JPY",
 			initialDeposit = MonetaryAmountDTO(100.0, "EUR"),
 			transfer = MonetaryAmountDTO(75.0, "EUR"),
 			expectedInitialBalanceAfterDeposit = BigDecimal("96.00"),
-			expectedSourceBalanceAfterTransfer = BigDecimal("24.00"),
-			expectedTargetBalanceAfterTransfer = BigDecimal("12037.50"),
+			expectedDebitAccountBalanceAfterTransfer = BigDecimal("24.00"),
+			expectedCreditAccountBalanceAfterTransfer = BigDecimal("12037.50"),
 		)
 	}
 
 	private fun testMoneyTransfer(
-		sourceAccountCurrency: String,
-		targetAccountCurrency: String,
+		debitAccountCurrency: String,
+		creditAccountCurrency: String,
 		initialDeposit: MonetaryAmountDTO,
 		transfer: MonetaryAmountDTO,
 		expectedInitialBalanceAfterDeposit: BigDecimal,
-		expectedSourceBalanceAfterTransfer: BigDecimal,
-		expectedTargetBalanceAfterTransfer: BigDecimal,
+		expectedDebitAccountBalanceAfterTransfer: BigDecimal,
+		expectedCreditAccountBalanceAfterTransfer: BigDecimal,
 	) {
-		val sourceAccount = createAccount(sourceAccountCurrency)
-		val targetAccount = createAccount(targetAccountCurrency)
+		val debitAccount = createAccount(debitAccountCurrency)
+		val creditAccount = createAccount(creditAccountCurrency)
 
-		var updatedSourceAccount = depositMoney(sourceAccount.id, initialDeposit.amount, initialDeposit.currency)
-		assertEquals(expectedInitialBalanceAfterDeposit, updatedSourceAccount.balance, "Balance was updated correctly")
-		assertEquals(sourceAccount.currency, updatedSourceAccount.currency, "Currency of source account must not change")
+		var updatedDebitAccount = depositMoney(debitAccount.id, initialDeposit.amount, initialDeposit.currency)
+		assertEquals(expectedInitialBalanceAfterDeposit, updatedDebitAccount.balance, "Balance was updated correctly")
+		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
 
-		var updatedTargetAccount = getAccount(targetAccount.id)
-		assertEquals(BigDecimal("0.00"), updatedTargetAccount.balance, "Balance of target account must still be 0")
-		assertEquals(targetAccount.currency, updatedTargetAccount.currency, "Currency of target account must not change")
+		var updatedCreditAccount = getAccount(creditAccount.id)
+		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance of credit account must still be 0")
+		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 
 		transferMoney(
-			sourceAccountId = sourceAccount.id,
-			targetAccountId = targetAccount.id,
+			debitAccountId = debitAccount.id,
+			creditAccountId = creditAccount.id,
 			amount = transfer.amount,
 			currency = transfer.currency,
 		)
 
-		updatedSourceAccount = getAccount(sourceAccount.id)
-		assertEquals(expectedSourceBalanceAfterTransfer, updatedSourceAccount.balance, "Balance was updated correctly")
-		assertEquals(sourceAccount.currency, updatedSourceAccount.currency, "Currency of source account must not change")
+		updatedDebitAccount = getAccount(debitAccount.id)
+		assertEquals(expectedDebitAccountBalanceAfterTransfer, updatedDebitAccount.balance, "Balance was updated correctly")
+		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
 
-		updatedTargetAccount = getAccount(targetAccount.id)
-		assertEquals(expectedTargetBalanceAfterTransfer, updatedTargetAccount.balance, "Balance was updated correctly")
-		assertEquals(targetAccount.currency, updatedTargetAccount.currency, "Currency of source account must not change")
+		updatedCreditAccount = getAccount(creditAccount.id)
+		assertEquals(expectedCreditAccountBalanceAfterTransfer, updatedCreditAccount.balance, "Balance was updated correctly")
+		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 	}
 
 	private fun createAccount(currency: String): AccountDTO {
@@ -236,10 +236,10 @@ class TransactionTests {
 		return account
 	}
 
-	private fun transferMoney(sourceAccountId: String, targetAccountId: String, amount: BigDecimal, currency: String): AccountDTO {
+	private fun transferMoney(debitAccountId: String, creditAccountId: String, amount: BigDecimal, currency: String): AccountDTO {
 		val request = MoneyTransferRequest(
-			sourceAccountId = sourceAccountId,
-			targetAccountId = targetAccountId,
+			debitAccountId = debitAccountId,
+			creditAccountId = creditAccountId,
 			amount = amount,
 			currency = currency,
 		)
@@ -252,7 +252,7 @@ class TransactionTests {
 		// Tell the Kotlin compiler that we are sure that account cannot be null here
 		account!!
 
-		assertEquals(sourceAccountId, account.id)
+		assertEquals(debitAccountId, account.id)
 		return account
 	}
 

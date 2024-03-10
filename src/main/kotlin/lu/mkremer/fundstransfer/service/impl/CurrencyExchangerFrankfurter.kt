@@ -37,13 +37,13 @@ class CurrencyExchangerFrankfurter(
         } else {
             // First, we need to find a common ground before we can do the conversion.
             // For this, we choose the base currency of the external service.
-            val rateOfSourceCurrency = it[amount.currency] ?: throw UnsupportedCurrencyException(amount.currency)
-            val baseAmount = amount.amount.divide(BigDecimal(rateOfSourceCurrency), 4, RoundingMode.HALF_UP)
+            val rateOfDebitCurrency = it[amount.currency] ?: throw UnsupportedCurrencyException(amount.currency)
+            val baseAmount = amount.amount.divide(BigDecimal(rateOfDebitCurrency), 4, RoundingMode.HALF_UP)
 
             // Second, we can now convert the amount from the base currency to the
             // target currency
-            val rateOfTargetCurrency = it[toCurrency] ?: throw UnsupportedCurrencyException(toCurrency)
-            baseAmount.multiply(BigDecimal(rateOfTargetCurrency))
+            val rateOfCreditCurrency = it[toCurrency] ?: throw UnsupportedCurrencyException(toCurrency)
+            baseAmount.multiply(BigDecimal(rateOfCreditCurrency))
         }
     } ?: throw ServiceNotReadyException("Exchange rates are not loaded yet")
 

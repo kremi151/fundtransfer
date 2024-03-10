@@ -109,7 +109,7 @@ class TransactionController {
                         mediaType = "application/json",
                         schema = Schema(
                             implementation = AccountDTO::class,
-                            description = "The source account after the money transfer was processed"
+                            description = "The debit account after the money transfer was processed"
                         ),
                     ),
                 ],

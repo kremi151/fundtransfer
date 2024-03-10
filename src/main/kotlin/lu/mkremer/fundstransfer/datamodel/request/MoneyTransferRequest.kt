@@ -9,13 +9,13 @@ import java.math.BigDecimal
 @Schema(description = "The request to transfer money from one account to another")
 class MoneyTransferRequest(
 
-    @Schema(description = "The source account ID to withdraw the money from", required = true)
+    @Schema(description = "The debit account ID to withdraw the money from", required = true)
     @AccountId // TODO: Write test for validation
-    val sourceAccountId: String,
+    val debitAccountId: String,
 
-    @Schema(description = "The target account ID to deposit the money in", required = true)
+    @Schema(description = "The credit account ID to deposit the money in", required = true)
     @AccountId // TODO: Write test for validation
-    val targetAccountId: String,
+    val creditAccountId: String,
 
     @Schema(description = "The amount of money to transfer", required = true)
     @DecimalMin(value = "0.0", inclusive = false, message = "The amount must be strictly positive") // TODO: Write test for validation

@@ -71,25 +71,25 @@ class TransactionServiceImpl(
     @Transactional
     override fun transferMoney(request: MoneyTransferRequest): AccountDTO {
         // Validations performed by Hibernate Validator (See @AccountId annotation)
-        val sourceId = request.sourceAccountId.toInt()
-        val targetId = request.targetAccountId.toInt()
+        val debitAccountId = request.debitAccountId.toInt()
+        val creditAccountId = request.creditAccountId.toInt()
 
-        var sourceAccount = accountRepository.findById(sourceId).orElseThrow()
-        val targetAccount = accountRepository.findById(targetId).orElseThrow()
+        var debitAccount = accountRepository.findById(debitAccountId).orElseThrow()
+        val creditAccount = accountRepository.findById(creditAccountId).orElseThrow()
 
         val withdrawnMoney = fundTransferService.convert(
             monetaryAmount = MonetaryAmountDTO(
                 amount = request.amount,
                 currency = request.currency,
             ),
-            targetCurrency = sourceAccount.currency,
+            targetCurrency = debitAccount.currency,
         )
 
-        if (sourceAccount.balance < withdrawnMoney.amount) {
+        if (debitAccount.balance < withdrawnMoney.amount) {
             throw InsufficientBalanceException(
-                accountId = request.sourceAccountId,
-                missing = withdrawnMoney.amount.minus(sourceAccount.balance),
-                currency = sourceAccount.currency,
+                accountId = request.debitAccountId,
+                missing = withdrawnMoney.amount.minus(debitAccount.balance),
+                currency = debitAccount.currency,
             ) // TODO: Test
         }
 
@@ -98,16 +98,16 @@ class TransactionServiceImpl(
                 amount = withdrawnMoney.amount,
                 currency = withdrawnMoney.currency,
             ),
-            targetCurrency = targetAccount.currency,
+            targetCurrency = creditAccount.currency,
         )
 
-        sourceAccount.balance = sourceAccount.balance.minus(withdrawnMoney.amount)
-        targetAccount.balance = targetAccount.balance.plus(depositedMoney.amount)
+        debitAccount.balance = debitAccount.balance.minus(withdrawnMoney.amount)
+        creditAccount.balance = creditAccount.balance.plus(depositedMoney.amount)
 
-        sourceAccount = accountRepository.save(sourceAccount)
-        accountRepository.save(targetAccount)
+        debitAccount = accountRepository.save(debitAccount)
+        accountRepository.save(creditAccount)
 
-        return sourceAccount.asDTO()
+        return debitAccount.asDTO()
     }
 
 }
