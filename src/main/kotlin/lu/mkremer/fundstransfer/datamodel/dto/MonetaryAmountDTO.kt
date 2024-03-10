@@ -8,4 +8,11 @@ import java.math.BigDecimal
 data class MonetaryAmountDTO(
     val amount: BigDecimal,
     val currency: String,
-)
+) {
+
+    /**
+     * Alternative convenience constructor accepting a [Double]
+     */
+    constructor(amount: Double, currency: String): this(BigDecimal(amount), currency)
+
+}
