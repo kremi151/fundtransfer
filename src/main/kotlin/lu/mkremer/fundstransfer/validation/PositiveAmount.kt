@@ -2,20 +2,19 @@ package lu.mkremer.fundstransfer.validation
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
-import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.DecimalMin
 import kotlin.reflect.KClass
 
 /**
- * A custom validation annotation used to validate currency strings in user
- * inputs via the REST API, expecting currencies to be 3 uppercase letters
- * big strings.
+ * A custom validation annotation used to validate monetary amounts in user
+ * inputs via the REST API, expecting amounts to be strictly positive.
  * The validation itself is automatically performed by Hibernate Validator.
  */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-@Pattern(regexp = "^[A-Z]{3}$", message = "The currency must be 3 letters in uppercase format")
+@DecimalMin(value = "0.0", inclusive = false, message = "The amount must be strictly positive")
 @Constraint(validatedBy = [])
-annotation class Currency(
+annotation class PositiveAmount(
     val message: String = "",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []

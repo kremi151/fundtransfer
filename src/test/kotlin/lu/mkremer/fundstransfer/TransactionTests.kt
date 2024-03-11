@@ -22,9 +22,14 @@ import org.springframework.http.HttpStatus
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class TransactionTests {
+/**
+ * Integration tests that cover money transfer between two accounts, in
+ * different configurations.
+ *
+ * The tests that cover happy paths also implicitly cover the endpoints
+ * for creating accounts and depositing money on them.
+ */
+class TransactionTests: AbstractIntegrationTest() {
 
 	companion object {
 		// To not rely on an external service during integration tests, the exchange rates
@@ -33,21 +38,8 @@ class TransactionTests {
 		private const val EUR_TO_CHF = 0.96
 	}
 
-	@LocalServerPort
-	private var localPort: Int = 0
-
 	@MockBean
 	private lateinit var currencyExchanger: CurrencyExchanger
-
-	private lateinit var restTemplate: TestRestTemplate
-
-	@BeforeEach
-	fun before() {
-		restTemplate = TestRestTemplate(
-			RestTemplateBuilder()
-				.rootUri("http://localhost:${localPort}")
-		)
-	}
 
 	@Test
 	fun testTransferMoneyWithSameCurrenciesEverywhere() {
@@ -255,5 +247,7 @@ class TransactionTests {
 		assertEquals(debitAccountId, account.id)
 		return account
 	}
+
+	// TODO: Add withdraw tests
 
 }

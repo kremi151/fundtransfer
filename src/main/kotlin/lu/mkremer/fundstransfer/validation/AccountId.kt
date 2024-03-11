@@ -7,7 +7,8 @@ import kotlin.reflect.KClass
 
 /**
  * A custom validation annotation used to validate account IDs in user inputs
- * via the REST API.
+ * via the REST API, expecting IDs to be 9 digits wide, including leading
+ * zeros.
  * The validation itself is automatically performed by Hibernate Validator.
  */
 @Target(AnnotationTarget.FIELD)

@@ -5,6 +5,7 @@ import lu.mkremer.fundstransfer.exception.ServiceNotReadyException
 import lu.mkremer.fundstransfer.exception.UnsupportedCurrencyException
 import lu.mkremer.fundstransfer.service.CurrencyExchanger
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import java.io.IOException
@@ -16,6 +17,7 @@ import java.math.RoundingMode
  * An implementation of [CurrencyExchanger] that uses the API of https://www.frankfurter.app/
  */
 @Service
+@Profile("!test") // Do not load in tests
 class CurrencyExchangerFrankfurter(
     private val restTemplate: RestTemplate,
 ): CurrencyExchanger {

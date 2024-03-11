@@ -6,6 +6,6 @@ import lu.mkremer.fundstransfer.validation.Currency
 @Schema(description = "The request for creating a new account")
 class CreateAccountRequest(
     @Schema(description = "The currency of the money that this account will hold", required = true)
-    @Currency // TODO: Test validation
+    @Currency
     val currency: String,
 )
