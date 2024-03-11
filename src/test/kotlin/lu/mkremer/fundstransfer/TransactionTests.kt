@@ -145,6 +145,42 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	@Test
+	fun testDepositAndWithdrawMoney() {
+		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true);
+		`when`(currencyExchanger.convert(any(), eq("JPY")))
+			.thenAnswer {
+				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
+				if (monetaryAmount.currency == "JPY") {
+					monetaryAmount.amount
+				} else throw UnsupportedCurrencyException(monetaryAmount.currency)
+			}
+
+		val account = createAccount("JPY")
+
+		var updatedAccount = depositMoney(account.id, 1000.8.toBigDecimal(), "JPY")
+		assertEquals(updatedAccount.balance, BigDecimal("1000.80"), "The right amount of money was deposited")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+
+		// Also check if getting the accounts returns the expected amount of money
+		updatedAccount = getAccount(account.id)
+		assertEquals(updatedAccount.balance, BigDecimal("1000.80"), "The right amount of money was deposited")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+
+		updatedAccount = withdrawMoney(account.id, 180.6.toBigDecimal(), "JPY")
+		assertEquals(updatedAccount.balance, BigDecimal("820.20"), "The right amount of money was withdrawn")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+
+		// Also check if getting the accounts returns the expected amount of money
+		updatedAccount = getAccount(account.id)
+		assertEquals(updatedAccount.balance, BigDecimal("820.20"), "The right amount of money was deposited")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+	}
+
 	private fun testMoneyTransfer(
 		debitAccountCurrency: String,
 		creditAccountCurrency: String,
@@ -209,13 +245,13 @@ class TransactionTests: AbstractIntegrationTest() {
 		return account!!
 	}
 
-	private fun depositMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
+	private fun performBalanceRequest(endpoint: String, accountId: String, amount: BigDecimal, currency: String): AccountDTO {
 		val request = AccountBalanceRequest(
 			accountId = accountId,
 			amount = amount,
 			currency = currency,
 		)
-		val response = restTemplate.postForEntity("/transaction/deposit", request, AccountDTO::class.java)
+		val response = restTemplate.postForEntity("/transaction/$endpoint", request, AccountDTO::class.java)
 		assertEquals(HttpStatus.OK, response.statusCode, "Status code must be 200 Ok")
 
 		val account = response.body
@@ -226,6 +262,14 @@ class TransactionTests: AbstractIntegrationTest() {
 
 		assertEquals(accountId, account.id)
 		return account
+	}
+
+	private fun depositMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
+		return performBalanceRequest("deposit", accountId, amount, currency)
+	}
+
+	private fun withdrawMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
+		return performBalanceRequest("withdraw", accountId, amount, currency)
 	}
 
 	private fun transferMoney(debitAccountId: String, creditAccountId: String, amount: BigDecimal, currency: String): AccountDTO {
@@ -247,7 +291,5 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(debitAccountId, account.id)
 		return account
 	}
-
-	// TODO: Add withdraw tests
 
 }
