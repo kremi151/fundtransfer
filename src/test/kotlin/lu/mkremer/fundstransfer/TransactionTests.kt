@@ -2,6 +2,7 @@ package lu.mkremer.fundstransfer
 
 import lu.mkremer.fundstransfer.datamodel.dto.AccountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
+import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
 import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
 import lu.mkremer.fundstransfer.datamodel.request.CreateAccountRequest
 import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
@@ -19,6 +20,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -181,6 +183,83 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
 	}
 
+	@Test
+	fun testDepositAndWithdrawMoneyWithInsufficientMoney() {
+		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
+		`when`(currencyExchanger.convert(any(), eq("JPY")))
+			.thenAnswer {
+				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
+				if (monetaryAmount.currency == "JPY") {
+					monetaryAmount.amount
+				} else throw UnsupportedCurrencyException(monetaryAmount.currency)
+			}
+
+		val account = createAccount("JPY")
+
+		var updatedAccount = depositMoney(account.id, 1000.0.toBigDecimal(), "JPY")
+		assertEquals(updatedAccount.balance, BigDecimal("1000.00"), "The right amount of money was deposited")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+
+		// Also check if getting the accounts returns the expected amount of money
+		updatedAccount = getAccount(account.id)
+		assertEquals(updatedAccount.balance, BigDecimal("1000.00"), "The right amount of money was deposited")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+
+		val validationError = attemptWithdrawMoney(account.id, 1000.1.toBigDecimal(), "JPY")
+
+		assertEquals("Account ${account.id} has insufficient balance: 0.10 JPY are missing", validationError.message)
+		assertNull(validationError.fieldErrors)
+
+		// Check if getting the accounts returns the unchanged amount of money
+		updatedAccount = getAccount(account.id)
+		assertEquals(updatedAccount.balance, BigDecimal("1000.00"), "The right amount of money was deposited")
+		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
+		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+	}
+
+	@Test
+	fun testTransferMoneyWithInsufficientMoneyInDebitAccount() {
+		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
+		`when`(currencyExchanger.convert(any(), eq("JPY")))
+			.thenAnswer {
+				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
+				if (monetaryAmount.currency == "JPY") {
+					monetaryAmount.amount
+				} else throw UnsupportedCurrencyException(monetaryAmount.currency)
+			}
+
+		val debitAccount = createAccount("JPY")
+		val creditAccount = createAccount("JPY")
+
+		var updatedDebitAccount = depositMoney(debitAccount.id, 2000.0.toBigDecimal(), "JPY")
+		assertEquals(BigDecimal("2000.00"), updatedDebitAccount.balance, "Balance was updated correctly")
+		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
+
+		var updatedCreditAccount = getAccount(creditAccount.id)
+		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance of credit account must still be 0")
+		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
+
+		val validationError = attemptTransferMoney(
+			debitAccountId = debitAccount.id,
+			creditAccountId = creditAccount.id,
+			amount = 2000.1.toBigDecimal(),
+			currency = "JPY",
+		)
+
+		assertEquals("Account ${debitAccount.id} has insufficient balance: 0.10 JPY are missing", validationError.message)
+		assertNull(validationError.fieldErrors)
+
+		updatedDebitAccount = getAccount(debitAccount.id)
+		assertEquals(BigDecimal("2000.00"), updatedDebitAccount.balance, "Balance was not updated")
+		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
+
+		updatedCreditAccount = getAccount(creditAccount.id)
+		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance was not updated")
+		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
+	}
+
 	private fun testMoneyTransfer(
 		debitAccountCurrency: String,
 		creditAccountCurrency: String,
@@ -264,12 +343,46 @@ class TransactionTests: AbstractIntegrationTest() {
 		return account
 	}
 
+	private fun attemptWithdrawMoney(accountId: String, amount: BigDecimal, currency: String): ValidationErrorDTO {
+		val request = AccountBalanceRequest(
+			accountId = accountId,
+			amount = amount,
+			currency = currency,
+		)
+		val response = restTemplate.postForEntity("/transaction/withdraw", request, ValidationErrorDTO::class.java)
+		assertEquals(HttpStatus.BAD_REQUEST, response.statusCode, "Status code must be 400 Bad Request")
+
+		val body = response.body
+		assertNotNull(body, "Response body must not be null")
+
+		// Tell the Kotlin compiler that we are sure that body cannot be null here
+		return body!!
+	}
+
 	private fun depositMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
 		return performBalanceRequest("deposit", accountId, amount, currency)
 	}
 
 	private fun withdrawMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
 		return performBalanceRequest("withdraw", accountId, amount, currency)
+	}
+
+	private fun attemptTransferMoney(debitAccountId: String, creditAccountId: String, amount: BigDecimal, currency: String): ValidationErrorDTO {
+		val request = MoneyTransferRequest(
+			debitAccountId = debitAccountId,
+			creditAccountId = creditAccountId,
+			amount = amount,
+			currency = currency,
+		)
+		val response = restTemplate.postForEntity("/transaction/transfer", request, ValidationErrorDTO::class.java)
+
+		assertEquals(HttpStatus.BAD_REQUEST, response.statusCode, "Status code must be 400 Bad Request")
+
+		val body = response.body
+		assertNotNull(body)
+
+		// Tell the Kotlin compiler that we are sure that body cannot be null here
+		return body!!
 	}
 
 	private fun transferMoney(debitAccountId: String, creditAccountId: String, amount: BigDecimal, currency: String): AccountDTO {
@@ -291,5 +404,8 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(debitAccountId, account.id)
 		return account
 	}
+
+	// TODO: Test: Either the debit or the credit account does not exist
+	// TODO: Test: The exchange rate cannot be retrieved
 
 }
