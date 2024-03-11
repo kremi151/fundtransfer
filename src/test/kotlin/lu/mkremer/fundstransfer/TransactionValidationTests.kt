@@ -48,8 +48,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -64,8 +64,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = currency,
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -80,8 +80,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = amount.toBigDecimal(),
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -95,12 +95,12 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "eur",
             amount = BigDecimal.ZERO,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(
             PROPERTY_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID,
             PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY,
             PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT,
-        ))
+        ), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -115,8 +115,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -131,8 +131,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = currency,
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -147,8 +147,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = amount.toBigDecimal(),
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -162,12 +162,12 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "eur",
             amount = BigDecimal.ZERO,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(
             PROPERTY_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID,
             PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY,
             PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT,
-        ))
+        ), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -183,8 +183,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_DEBIT_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_DEBIT_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -200,8 +200,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_CREDIT_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_CREDIT_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -217,8 +217,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = currency,
             amount = BigDecimal.ONE,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -234,8 +234,8 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "EUR",
             amount = amount.toBigDecimal(),
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT))
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())
@@ -250,13 +250,13 @@ class TransactionValidationTests: AbstractIntegrationTest() {
             currency = "eur",
             amount = BigDecimal.ZERO,
         )
-        assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        assertEquals(error.fieldErrors, mapOf(
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(mapOf(
             PROPERTY_DEBIT_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID,
             PROPERTY_CREDIT_ACCOUNT_ID to ERROR_MESSAGE_ACCOUNT_ID,
             PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY,
             PROPERTY_AMOUNT to ERROR_MESSAGE_AMOUNT,
-        ))
+        ), error.fieldErrors)
 
         // No account should have been updated or created
         verify(accountRepository, never()).save(any())

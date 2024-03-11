@@ -5,6 +5,8 @@ import lu.mkremer.fundstransfer.datamodel.jpa.Account
 import lu.mkremer.fundstransfer.datamodel.request.CreateAccountRequest
 import lu.mkremer.fundstransfer.repository.AccountRepository
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
@@ -36,10 +38,10 @@ class AccountValidationTests: AbstractIntegrationTest() {
         val error = attemptToCreateAccount(
             currency = currency,
         )
-        Assertions.assertEquals(error.message, GENERAL_ERROR_MESSAGE)
-        Assertions.assertEquals(
+        assertEquals(GENERAL_ERROR_MESSAGE, error.message)
+        assertEquals(
+            mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY),
             error.fieldErrors,
-            mapOf(PROPERTY_CURRENCY to ERROR_MESSAGE_CURRENCY)
         )
 
         // No account should have been updated or created
@@ -52,10 +54,10 @@ class AccountValidationTests: AbstractIntegrationTest() {
             currency = currency,
         )
         val response = restTemplate.postForEntity("/account", request, ValidationErrorDTO::class.java)
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.statusCode, "Status code must be 400 Bad Request")
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode, "Status code must be 400 Bad Request")
 
         val validationError = response.body
-        Assertions.assertNotNull(validationError, "Response body must not be null")
+        assertNotNull(validationError, "Response body must not be null")
 
         // Tell the Kotlin compiler that we are sure that account cannot be null here
         return validationError!!

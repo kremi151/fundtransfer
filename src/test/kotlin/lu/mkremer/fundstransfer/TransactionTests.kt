@@ -147,7 +147,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testDepositAndWithdrawMoney() {
-		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true);
+		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
 		`when`(currencyExchanger.convert(any(), eq("JPY")))
 			.thenAnswer {
 				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
