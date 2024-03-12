@@ -4,6 +4,7 @@ import lu.mkremer.fundstransfer.datamodel.dto.AccountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
 import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
 import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
+import lu.mkremer.fundstransfer.exception.IllegalMoneyTransferException
 import lu.mkremer.fundstransfer.exception.InsufficientBalanceException
 import lu.mkremer.fundstransfer.extension.asDTO
 import lu.mkremer.fundstransfer.repository.AccountRepository
@@ -73,6 +74,10 @@ class TransactionServiceImpl(
         // Validations performed by Hibernate Validator (See @AccountId annotation)
         val debitAccountId = request.debitAccountId.toInt()
         val creditAccountId = request.creditAccountId.toInt()
+
+        if (debitAccountId == creditAccountId) {
+            throw IllegalMoneyTransferException("Transferring money from and to the same account is not allowed")
+        }
 
         var debitAccount = accountRepository.findById(debitAccountId).orElseThrow()
         val creditAccount = accountRepository.findById(creditAccountId).orElseThrow()

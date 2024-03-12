@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct
 import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
 import lu.mkremer.fundstransfer.datamodel.exchanger.ExchangeRates
 import lu.mkremer.fundstransfer.exception.ServiceNotReadyException
-import lu.mkremer.fundstransfer.exception.UnsupportedCurrencyException
+import lu.mkremer.fundstransfer.exception.UnsupportedCurrenciesException
 import lu.mkremer.fundstransfer.service.ExchangeRateSynchronizer
 import lu.mkremer.fundstransfer.service.FundTransferService
 import org.slf4j.LoggerFactory
@@ -60,9 +60,14 @@ class FundTransferServiceImpl @Autowired constructor(
                     currency = targetCurrency,
                 )
             } else {
-                throw UnsupportedCurrencyException(targetCurrency) // TODO: What about source currency?
+                val unsupportedCurrencies = listOf(monetaryAmount.currency, targetCurrency)
+                    .filter { c -> !it.supportsCurrency(c) }
+                    .toSet()
+                throw UnsupportedCurrenciesException(unsupportedCurrencies)
             }
         } ?: throw ServiceNotReadyException("Exchange rates are not loaded yet")
     }
+
+    override fun supportsCurrency(currency: String): Boolean = exchangeRates?.supportsCurrency(currency) == true
 
 }

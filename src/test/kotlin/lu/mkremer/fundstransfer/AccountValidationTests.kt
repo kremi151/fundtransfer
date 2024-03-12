@@ -24,7 +24,7 @@ class AccountValidationTests: AbstractIntegrationTest() {
     companion object {
         private const val GENERAL_ERROR_MESSAGE = "At least one submitted property has an invalid value"
 
-        private const val ERROR_MESSAGE_CURRENCY = "The currency must be 3 letters in uppercase format"
+        private const val ERROR_MESSAGE_CURRENCY = "The currency is not an uppercase char sequence of 3 letters, or not supported"
 
         private const val PROPERTY_CURRENCY = "currency"
     }

@@ -1,7 +1,7 @@
 package lu.mkremer.fundstransfer.datamodel.exchanger
 
 import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
-import lu.mkremer.fundstransfer.exception.UnsupportedCurrencyException
+import lu.mkremer.fundstransfer.exception.UnsupportedCurrenciesException
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -31,12 +31,12 @@ class ExchangeRates(
         } else {
             // First, we need to find a common ground before we can do the conversion.
             // For this, we choose the base currency of the external service.
-            val rateOfDebitCurrency = rates[amount.currency] ?: throw UnsupportedCurrencyException(amount.currency)
+            val rateOfDebitCurrency = rates[amount.currency] ?: throw UnsupportedCurrenciesException(amount.currency)
             val baseAmount = amount.amount.divide(BigDecimal(rateOfDebitCurrency), 4, RoundingMode.HALF_UP)
 
             // Second, we can now convert the amount from the base currency to the
             // target currency
-            val rateOfCreditCurrency = rates[toCurrency] ?: throw UnsupportedCurrencyException(toCurrency)
+            val rateOfCreditCurrency = rates[toCurrency] ?: throw UnsupportedCurrenciesException(toCurrency)
             baseAmount.multiply(BigDecimal(rateOfCreditCurrency))
         }
     }

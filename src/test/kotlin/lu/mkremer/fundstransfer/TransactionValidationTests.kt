@@ -7,6 +7,7 @@ import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
 import lu.mkremer.fundstransfer.repository.AccountRepository
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -27,7 +28,7 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         private const val GENERAL_ERROR_MESSAGE = "At least one submitted property has an invalid value"
 
         private const val ERROR_MESSAGE_ACCOUNT_ID = "The account ID must be a 9-digit number (with leading zeros)"
-        private const val ERROR_MESSAGE_CURRENCY = "The currency must be 3 letters in uppercase format"
+        private const val ERROR_MESSAGE_CURRENCY = "The currency is not an uppercase char sequence of 3 letters, or not supported"
         private const val ERROR_MESSAGE_AMOUNT = "The amount must be strictly positive"
 
         private const val PROPERTY_ACCOUNT_ID = "accountId"
@@ -39,6 +40,13 @@ class TransactionValidationTests: AbstractIntegrationTest() {
 
     @MockBean
     private lateinit var accountRepository: AccountRepository
+
+    @BeforeEach
+    fun setupStaticExchangeRates() {
+        // For the sake of these tests, we just specify some static exchange
+        // rates to make the currency validation work
+        mockExchangeRates(mapOf("EUR" to 1.0))
+    }
 
     @ParameterizedTest
     @ValueSource(strings = ["", "1234", "1234567890", "12345678p"])
@@ -57,7 +65,7 @@ class TransactionValidationTests: AbstractIntegrationTest() {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU"])
+    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testDepositMoneyWithInvalidCurrency(currency: String) {
         val error = attemptToDepositMoney(
             accountId = "123456789",
@@ -124,7 +132,7 @@ class TransactionValidationTests: AbstractIntegrationTest() {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU"])
+    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testWithdrawMoneyWithInvalidCurrency(currency: String) {
         val error = attemptToWithdrawMoney(
             accountId = "123456789",
@@ -209,7 +217,7 @@ class TransactionValidationTests: AbstractIntegrationTest() {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU"])
+    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testTransferMoneyWithInvalidCurrency(currency: String) {
         val error = attemptToTransferMoney(
             debitAccountId = "123456789",

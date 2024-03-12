@@ -15,4 +15,9 @@ interface FundTransferService {
      */
     fun updateExchangeRates(): CompletableFuture<Unit>
 
+    /**
+     * Verifies whether the given [currency] is supported
+     */
+    fun supportsCurrency(currency: String): Boolean
+
 }

@@ -34,12 +34,6 @@ class TransactionTests: AbstractIntegrationTest() {
 		private const val EUR_TO_CHF = 0.96
 	}
 
-	@MockBean
-	private lateinit var exchangeRateSynchronizer: ExchangeRateSynchronizer
-
-	@Autowired
-	private lateinit var fundTransferService: FundTransferService
-
 	@Test
 	fun testTransferMoneyWithSameCurrenciesEverywhere() {
 		mockExchangeRates(mapOf("EUR" to 1.0))
@@ -182,15 +176,6 @@ class TransactionTests: AbstractIntegrationTest() {
 		updatedCreditAccount = getAccount(creditAccount.id)
 		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance was not updated")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
-	}
-
-	private fun mockExchangeRates(rates: Map<String, Double>) {
-		`when`(exchangeRateSynchronizer.fetch()).thenReturn(ExchangeRates(rates))
-		// Update exchange rates based on mocked data
-		// Since we don't actually contact an external service in the tests, this should not block the current thread
-		// for too long.
-		// Still, let's make sure we don't wait forever since this will still be performed asynchronously.
-		fundTransferService.updateExchangeRates().get(1, TimeUnit.SECONDS)
 	}
 
 	private fun testMoneyTransfer(
@@ -336,6 +321,26 @@ class TransactionTests: AbstractIntegrationTest() {
 
 		assertEquals(debitAccountId, account.id)
 		return account
+	}
+
+	@Test
+	fun testTransferringMoneyToTheSameAccount() {
+		mockExchangeRates(mapOf("CHF" to EUR_TO_CHF))
+
+		val account = createAccount("CHF")
+
+		val response = attemptTransferMoney(
+			debitAccountId = account.id,
+			creditAccountId = account.id,
+			amount = BigDecimal.TEN,
+			currency = "CHF",
+		)
+
+		assertEquals(
+			"Transfer could not be performed: Transferring money from and to the same account is not allowed",
+			response.message,
+		)
+		assertNull(response.fieldErrors)
 	}
 
 	// TODO: Test: Either the debit or the credit account does not exist
