@@ -3,26 +3,20 @@ package lu.mkremer.fundstransfer
 import lu.mkremer.fundstransfer.datamodel.dto.AccountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
+import lu.mkremer.fundstransfer.datamodel.exchanger.ExchangeRates
 import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
 import lu.mkremer.fundstransfer.datamodel.request.CreateAccountRequest
 import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
-import lu.mkremer.fundstransfer.exception.UnsupportedCurrencyException
-import lu.mkremer.fundstransfer.service.CurrencyExchanger
+import lu.mkremer.fundstransfer.service.ExchangeRateSynchronizer
+import lu.mkremer.fundstransfer.service.FundTransferService
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.test.web.server.LocalServerPort
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import java.math.BigDecimal
-import java.math.RoundingMode
+import java.util.concurrent.TimeUnit
 
 /**
  * Integration tests that cover money transfer between two accounts, in
@@ -41,21 +35,14 @@ class TransactionTests: AbstractIntegrationTest() {
 	}
 
 	@MockBean
-	private lateinit var currencyExchanger: CurrencyExchanger
+	private lateinit var exchangeRateSynchronizer: ExchangeRateSynchronizer
+
+	@Autowired
+	private lateinit var fundTransferService: FundTransferService
 
 	@Test
 	fun testTransferMoneyWithSameCurrenciesEverywhere() {
-		`when`(currencyExchanger.supportsCurrency("EUR")).thenReturn(true)
-		`when`(currencyExchanger.convert(
-			any(),
-			eq("EUR")
-		)).thenAnswer {
-			val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-			when (monetaryAmount.currency) {
-				"EUR" -> monetaryAmount.amount
-				else -> throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
-		}
+		mockExchangeRates(mapOf("EUR" to 1.0))
 
 		testMoneyTransfer(
 			debitAccountCurrency = "EUR",
@@ -70,30 +57,10 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testTransferMoneyWithSameCurrenciesInBothAccounts() {
-		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
-		`when`(currencyExchanger.supportsCurrency("EUR")).thenReturn(true)
-		`when`(currencyExchanger.convert(
-			any(),
-			eq("JPY")
-		)).thenAnswer {
-			val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-			when (monetaryAmount.currency) {
-				"JPY" -> monetaryAmount.amount
-				"EUR" -> monetaryAmount.amount.multiply(EUR_TO_JPY.toBigDecimal())
-				else -> throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
-		}
-		`when`(currencyExchanger.convert(
-			any(),
-			eq("EUR")
-		)).thenAnswer {
-			val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-			when (monetaryAmount.currency) {
-				"JPY" -> monetaryAmount.amount.divide(EUR_TO_JPY.toBigDecimal(), 4, RoundingMode.HALF_UP)
-				"EUR" -> monetaryAmount.amount
-				else -> throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
-		}
+		mockExchangeRates(mapOf(
+			"EUR" to 1.0,
+			"JPY" to EUR_TO_JPY,
+		))
 
 		testMoneyTransfer(
 			debitAccountCurrency = "JPY",
@@ -108,33 +75,11 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testTransferMoneyWithDifferentCurrenciesInBothAccounts() {
-		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
-		`when`(currencyExchanger.supportsCurrency("CHF")).thenReturn(true)
-		`when`(currencyExchanger.supportsCurrency("EUR")).thenReturn(true)
-		`when`(currencyExchanger.convert(
-			any(),
-			eq("JPY")
-		)).thenAnswer {
-			val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-			when (monetaryAmount.currency) {
-				"JPY" -> monetaryAmount.amount
-				"EUR" -> monetaryAmount.amount.multiply(EUR_TO_JPY.toBigDecimal())
-				"CHF" -> monetaryAmount.amount.divide(EUR_TO_CHF.toBigDecimal(), 4, RoundingMode.HALF_UP).multiply(EUR_TO_JPY.toBigDecimal())
-				else -> throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
-		}
-		`when`(currencyExchanger.convert(
-			any(),
-			eq("CHF")
-		)).thenAnswer {
-			val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-			when (monetaryAmount.currency) {
-				"JPY" -> monetaryAmount.amount.divide(EUR_TO_JPY.toBigDecimal(), 4, RoundingMode.HALF_UP).multiply(EUR_TO_CHF.toBigDecimal())
-				"CHF" -> monetaryAmount.amount
-				"EUR" -> monetaryAmount.amount.multiply(EUR_TO_CHF.toBigDecimal())
-				else -> throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
-		}
+		mockExchangeRates(mapOf(
+			"EUR" to 1.0,
+			"JPY" to EUR_TO_JPY,
+			"CHF" to EUR_TO_CHF,
+		))
 
 		testMoneyTransfer(
 			debitAccountCurrency = "CHF",
@@ -149,14 +94,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testDepositAndWithdrawMoney() {
-		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
-		`when`(currencyExchanger.convert(any(), eq("JPY")))
-			.thenAnswer {
-				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-				if (monetaryAmount.currency == "JPY") {
-					monetaryAmount.amount
-				} else throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
+		mockExchangeRates(mapOf("JPY" to EUR_TO_JPY))
 
 		val account = createAccount("JPY")
 
@@ -185,14 +123,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testDepositAndWithdrawMoneyWithInsufficientMoney() {
-		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
-		`when`(currencyExchanger.convert(any(), eq("JPY")))
-			.thenAnswer {
-				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-				if (monetaryAmount.currency == "JPY") {
-					monetaryAmount.amount
-				} else throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
+		mockExchangeRates(mapOf("JPY" to EUR_TO_JPY))
 
 		val account = createAccount("JPY")
 
@@ -221,14 +152,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testTransferMoneyWithInsufficientMoneyInDebitAccount() {
-		`when`(currencyExchanger.supportsCurrency("JPY")).thenReturn(true)
-		`when`(currencyExchanger.convert(any(), eq("JPY")))
-			.thenAnswer {
-				val monetaryAmount = it.getArgument<MonetaryAmountDTO>(0)
-				if (monetaryAmount.currency == "JPY") {
-					monetaryAmount.amount
-				} else throw UnsupportedCurrencyException(monetaryAmount.currency)
-			}
+		mockExchangeRates(mapOf("JPY" to EUR_TO_JPY))
 
 		val debitAccount = createAccount("JPY")
 		val creditAccount = createAccount("JPY")
@@ -258,6 +182,15 @@ class TransactionTests: AbstractIntegrationTest() {
 		updatedCreditAccount = getAccount(creditAccount.id)
 		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance was not updated")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
+	}
+
+	private fun mockExchangeRates(rates: Map<String, Double>) {
+		`when`(exchangeRateSynchronizer.fetch()).thenReturn(ExchangeRates(rates))
+		// Update exchange rates based on mocked data
+		// Since we don't actually contact an external service in the tests, this should not block the current thread
+		// for too long.
+		// Still, let's make sure we don't wait forever since this will still be performed asynchronously.
+		fundTransferService.updateExchangeRates().get(1, TimeUnit.SECONDS)
 	}
 
 	private fun testMoneyTransfer(
