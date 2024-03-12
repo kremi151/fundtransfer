@@ -47,6 +47,11 @@ class FundTransferServiceImpl @Autowired constructor(
             exchangeRates = exchangeRateSynchronizer.fetch()
             CompletableFuture.completedFuture(Unit)
         } catch (e: Exception) {
+            // There was an issue retrieving the exchange rates, so it's best
+            // to clear the existing ones to prevent that incoming transactions
+            // make use of outdated values
+            exchangeRates = null
+
             LOGGER.error("Unable to update exchange rates", e)
             CompletableFuture.failedFuture(e)
         }
@@ -69,5 +74,7 @@ class FundTransferServiceImpl @Autowired constructor(
     }
 
     override fun supportsCurrency(currency: String): Boolean = exchangeRates?.supportsCurrency(currency) == true
+
+    override val ready: Boolean get() = exchangeRates != null
 
 }

@@ -3,7 +3,9 @@ package lu.mkremer.fundstransfer.controller.advice
 import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
 import lu.mkremer.fundstransfer.exception.IllegalMoneyTransferException
 import lu.mkremer.fundstransfer.exception.InsufficientBalanceException
+import lu.mkremer.fundstransfer.exception.ServiceNotReadyException
 import lu.mkremer.fundstransfer.exception.UnsupportedCurrenciesException
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -86,5 +88,16 @@ class ControllerExceptionHandler {
             .body(
                 ValidationErrorDTO(message = e.message)
             )
+    }
+
+    /**
+     * A handler to deal with situations where exchange rates are not
+     * available, be it due to an error while fetching them from an external
+     * service, or due to other factors.
+     * Returns a 503 Service Unavailable response.
+     */
+    @ExceptionHandler(ServiceNotReadyException::class)
+    fun handleServiceNotReadyException(e: ServiceNotReadyException): ResponseEntity<Unit> {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
     }
 }

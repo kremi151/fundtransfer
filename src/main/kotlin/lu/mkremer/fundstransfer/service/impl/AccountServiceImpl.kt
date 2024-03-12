@@ -18,7 +18,7 @@ class AccountServiceImpl(
 
     override fun createAccount(request: CreateAccountRequest): AccountDTO {
         val account = Account(
-            id = random.nextInt(1000000000), // This will generate an id from 0 to 999999999 (inclusive)
+            id = 1 + random.nextInt(999999999), // This will generate an id from 1 to 999999999 (inclusive)
             currency = request.currency,
         )
         return accountRepository

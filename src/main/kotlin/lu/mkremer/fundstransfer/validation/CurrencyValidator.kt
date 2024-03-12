@@ -28,7 +28,10 @@ class CurrencyValidator: ConstraintValidator<Currency, String> {
             LOGGER.debug("Not a valid currency string: $value")
             return false
         }
-        if (!fundTransferService.supportsCurrency(value)) {
+        // If the service is not ready, we will not check here for support.
+        // Instead, we rely on the service layer to throw a ServiceNotReadyException, or
+        // UnsupportedCurrenciesException as a fallback if needed.
+        if (fundTransferService.ready && !fundTransferService.supportsCurrency(value)) {
             LOGGER.debug("Unsupported currency: $value")
             return false
         }

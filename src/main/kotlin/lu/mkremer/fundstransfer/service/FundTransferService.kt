@@ -20,4 +20,9 @@ interface FundTransferService {
      */
     fun supportsCurrency(currency: String): Boolean
 
+    /**
+     * Specifies whether the service is ready, i.e. exchange rates are loaded
+     */
+    val ready: Boolean
+
 }

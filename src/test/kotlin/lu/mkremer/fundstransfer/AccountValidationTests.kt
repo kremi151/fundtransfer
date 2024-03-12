@@ -7,6 +7,7 @@ import lu.mkremer.fundstransfer.repository.AccountRepository
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
@@ -32,8 +33,15 @@ class AccountValidationTests: AbstractIntegrationTest() {
     @MockBean
     private lateinit var accountRepository: AccountRepository
 
+    @BeforeEach
+    fun setupStaticExchangeRates() {
+        // For the sake of these tests, we just specify some static exchange
+        // rates to make the currency validation work
+        mockExchangeRates(mapOf("EUR" to 1.0))
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU"])
+    @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testCreateAccountWithInvalidCurrency(currency: String) {
         val error = attemptToCreateAccount(
             currency = currency,

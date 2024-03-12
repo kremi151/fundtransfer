@@ -2,21 +2,14 @@ package lu.mkremer.fundstransfer
 
 import lu.mkremer.fundstransfer.datamodel.dto.AccountDTO
 import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
-import lu.mkremer.fundstransfer.datamodel.dto.ValidationErrorDTO
-import lu.mkremer.fundstransfer.datamodel.exchanger.ExchangeRates
 import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
 import lu.mkremer.fundstransfer.datamodel.request.CreateAccountRequest
 import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
-import lu.mkremer.fundstransfer.service.ExchangeRateSynchronizer
-import lu.mkremer.fundstransfer.service.FundTransferService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import java.math.BigDecimal
-import java.util.concurrent.TimeUnit
 
 /**
  * Integration tests that cover money transfer between two accounts, in
@@ -132,7 +125,7 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
 		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
 
-		val validationError = attemptWithdrawMoney(account.id, 1000.1.toBigDecimal(), "JPY")
+		val validationError = attemptToWithdrawMoney(account.id, 1000.1.toBigDecimal(), "JPY")
 
 		assertEquals("Account ${account.id} has insufficient balance: 0.10 JPY are missing", validationError.message)
 		assertNull(validationError.fieldErrors)
@@ -159,7 +152,7 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance of credit account must still be 0")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 
-		val validationError = attemptTransferMoney(
+		val validationError = attemptToTransferMoney(
 			debitAccountId = debitAccount.id,
 			creditAccountId = creditAccount.id,
 			amount = 2000.1.toBigDecimal(),
@@ -176,6 +169,167 @@ class TransactionTests: AbstractIntegrationTest() {
 		updatedCreditAccount = getAccount(creditAccount.id)
 		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance was not updated")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
+	}
+
+	@Test
+	fun testTransferringMoneyToTheSameAccount() {
+		mockExchangeRates(mapOf("CHF" to EUR_TO_CHF))
+
+		val account = createAccount("CHF")
+
+		val response = attemptToTransferMoney(
+			debitAccountId = account.id,
+			creditAccountId = account.id,
+			amount = BigDecimal.TEN,
+			currency = "CHF",
+		)
+
+		assertEquals(
+			"Transfer could not be performed: Transferring money from and to the same account is not allowed",
+			response.message,
+		)
+		assertNull(response.fieldErrors)
+	}
+
+	@Test
+	fun testDepositMoneyWithMissingExchangeRates() {
+		mockFailedExchangeRatesFetch()
+
+		val account = createAccount("EUR")
+
+		postRequestExpectingStatus(
+			path = "/transaction/deposit",
+			requestBody = AccountBalanceRequest(
+				accountId = account.id,
+				amount = BigDecimal.TEN,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.SERVICE_UNAVAILABLE,
+		)
+	}
+
+	@Test
+	fun testDepositMoneyOnUnknownAccount() {
+		mockExchangeRates(mapOf("EUR" to 1.0))
+
+		postRequestExpectingStatus(
+			path = "/transaction/deposit",
+			requestBody = AccountBalanceRequest(
+				accountId = "000000000", // This is a reserved ID which will never be assigned to any account
+				amount = BigDecimal.TEN,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.NOT_FOUND,
+		)
+	}
+
+	@Test
+	fun testWithdrawMoneyWithMissingExchangeRates() {
+		mockExchangeRates(mapOf("EUR" to 1.0))
+
+		val account = createAccount("EUR")
+
+		depositMoney(
+			accountId = account.id,
+			amount = BigDecimal.TEN,
+			currency = "EUR",
+		)
+
+		mockFailedExchangeRatesFetch()
+
+		postRequestExpectingStatus(
+			path = "/transaction/withdraw",
+			requestBody = AccountBalanceRequest(
+				accountId = account.id,
+				amount = BigDecimal.ONE,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.SERVICE_UNAVAILABLE,
+		)
+	}
+
+	@Test
+	fun testWithdrawMoneyFromUnknownAccount() {
+		mockExchangeRates(mapOf("EUR" to 1.0))
+
+		postRequestExpectingStatus(
+			path = "/transaction/withdraw",
+			requestBody = AccountBalanceRequest(
+				accountId = "000000000", // This is a reserved ID which will never be assigned to any account
+				amount = BigDecimal.ONE,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.NOT_FOUND,
+		)
+	}
+
+	@Test
+	fun testTransferMoneyWithMissingExchangeRates() {
+		mockExchangeRates(mapOf("EUR" to 1.0))
+
+		val debitAccount = createAccount("EUR")
+		val creditAccount = createAccount("EUR")
+
+		depositMoney(
+			accountId = debitAccount.id,
+			amount = BigDecimal.TEN,
+			currency = "EUR",
+		)
+
+		mockFailedExchangeRatesFetch()
+
+		postRequestExpectingStatus(
+			path = "/transaction/transfer",
+			requestBody = MoneyTransferRequest(
+				debitAccountId = debitAccount.id,
+				creditAccountId = creditAccount.id,
+				amount = BigDecimal.ONE,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.SERVICE_UNAVAILABLE,
+		)
+	}
+
+	@Test
+	fun testTransferMoneyFromUnknownDebitAccount() {
+		mockExchangeRates(mapOf("EUR" to 1.0))
+
+		val creditAccount = createAccount("EUR")
+
+		postRequestExpectingStatus(
+			path = "/transaction/transfer",
+			requestBody = MoneyTransferRequest(
+				debitAccountId = "000000000", // This is a reserved ID which will never be assigned to any account
+				creditAccountId = creditAccount.id,
+				amount = BigDecimal.ONE,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.NOT_FOUND,
+		)
+	}
+
+	@Test
+	fun testTransferMoneyFromUnknownCreditAccount() {
+		mockExchangeRates(mapOf("EUR" to 1.0))
+
+		val debitAccount = createAccount("EUR")
+
+		depositMoney(
+			accountId = debitAccount.id,
+			amount = BigDecimal.TEN,
+			currency = "EUR",
+		)
+
+		postRequestExpectingStatus(
+			path = "/transaction/transfer",
+			requestBody = MoneyTransferRequest(
+				debitAccountId = debitAccount.id,
+				creditAccountId = "000000000", // This is a reserved ID which will never be assigned to any account
+				amount = BigDecimal.ONE,
+				currency = "EUR",
+			),
+			expectedStatus = HttpStatus.NOT_FOUND,
+		)
 	}
 
 	private fun testMoneyTransfer(
@@ -261,46 +415,12 @@ class TransactionTests: AbstractIntegrationTest() {
 		return account
 	}
 
-	private fun attemptWithdrawMoney(accountId: String, amount: BigDecimal, currency: String): ValidationErrorDTO {
-		val request = AccountBalanceRequest(
-			accountId = accountId,
-			amount = amount,
-			currency = currency,
-		)
-		val response = restTemplate.postForEntity("/transaction/withdraw", request, ValidationErrorDTO::class.java)
-		assertEquals(HttpStatus.BAD_REQUEST, response.statusCode, "Status code must be 400 Bad Request")
-
-		val body = response.body
-		assertNotNull(body, "Response body must not be null")
-
-		// Tell the Kotlin compiler that we are sure that body cannot be null here
-		return body!!
-	}
-
 	private fun depositMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
 		return performBalanceRequest("deposit", accountId, amount, currency)
 	}
 
 	private fun withdrawMoney(accountId: String, amount: BigDecimal, currency: String): AccountDTO {
 		return performBalanceRequest("withdraw", accountId, amount, currency)
-	}
-
-	private fun attemptTransferMoney(debitAccountId: String, creditAccountId: String, amount: BigDecimal, currency: String): ValidationErrorDTO {
-		val request = MoneyTransferRequest(
-			debitAccountId = debitAccountId,
-			creditAccountId = creditAccountId,
-			amount = amount,
-			currency = currency,
-		)
-		val response = restTemplate.postForEntity("/transaction/transfer", request, ValidationErrorDTO::class.java)
-
-		assertEquals(HttpStatus.BAD_REQUEST, response.statusCode, "Status code must be 400 Bad Request")
-
-		val body = response.body
-		assertNotNull(body)
-
-		// Tell the Kotlin compiler that we are sure that body cannot be null here
-		return body!!
 	}
 
 	private fun transferMoney(debitAccountId: String, creditAccountId: String, amount: BigDecimal, currency: String): AccountDTO {
@@ -323,27 +443,12 @@ class TransactionTests: AbstractIntegrationTest() {
 		return account
 	}
 
-	@Test
-	fun testTransferringMoneyToTheSameAccount() {
-		mockExchangeRates(mapOf("CHF" to EUR_TO_CHF))
+	private fun postRequestExpectingStatus(path: String, requestBody: Any, expectedStatus: HttpStatusCode) {
+		val response = restTemplate.postForEntity(path, requestBody, Any::class.java)
+		assertEquals(expectedStatus, response.statusCode, "Status code must be as expected")
 
-		val account = createAccount("CHF")
-
-		val response = attemptTransferMoney(
-			debitAccountId = account.id,
-			creditAccountId = account.id,
-			amount = BigDecimal.TEN,
-			currency = "CHF",
-		)
-
-		assertEquals(
-			"Transfer could not be performed: Transferring money from and to the same account is not allowed",
-			response.message,
-		)
-		assertNull(response.fieldErrors)
+		val body = response.body
+		assertNull(body, "Response body must be null")
 	}
-
-	// TODO: Test: Either the debit or the credit account does not exist
-	// TODO: Test: The exchange rate cannot be retrieved
 
 }
