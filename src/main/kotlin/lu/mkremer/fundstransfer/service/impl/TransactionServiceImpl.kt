@@ -59,7 +59,7 @@ class TransactionServiceImpl(
                 accountId = request.accountId,
                 missing = converted.amount.minus(account.balance),
                 currency = account.currency,
-            ) // TODO: Test
+            )
         }
 
         account.balance = account.balance.minus(converted.amount)
@@ -95,7 +95,7 @@ class TransactionServiceImpl(
                 accountId = request.debitAccountId,
                 missing = withdrawnMoney.amount.minus(debitAccount.balance),
                 currency = debitAccount.currency,
-            ) // TODO: Test
+            )
         }
 
         val depositedMoney = fundTransferService.convert(

@@ -126,7 +126,7 @@ class TransactionController {
             ),
             ApiResponse(
                 responseCode = "404",
-                description = "Account not found", // TODO: How to differentiate between source and target?
+                description = "At least one referenced account was not found",
                 content = [Content()]
             ),
         ])

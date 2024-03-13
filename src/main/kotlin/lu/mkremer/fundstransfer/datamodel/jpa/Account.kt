@@ -12,7 +12,7 @@ class Account(
     val id: Int,
 
     @Column(nullable = false, length = 3)
-    var currency: String, // TODO: Use enum?
+    var currency: String,
 
     @Column(nullable = false)
     var balance: BigDecimal = DEFAULT_BALANCE,
