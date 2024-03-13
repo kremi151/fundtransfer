@@ -36,7 +36,7 @@ class ExchangeRateSynchronizerFrankfurter(
 
         LOGGER.info("Fetched exchange rates")
 
-        return ExchangeRates(rates)
+        return ExchangeRates.fromDoubleRates(rates)
     }
 
     private data class ExchangeResponse(

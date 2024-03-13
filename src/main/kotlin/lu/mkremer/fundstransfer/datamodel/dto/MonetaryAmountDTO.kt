@@ -13,6 +13,6 @@ data class MonetaryAmountDTO(
     /**
      * Alternative convenience constructor accepting a [Double]
      */
-    constructor(amount: Double, currency: String): this(BigDecimal(amount), currency)
+    constructor(amount: Double, currency: String): this(amount.toBigDecimal(), currency)
 
 }

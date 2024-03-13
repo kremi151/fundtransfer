@@ -75,7 +75,7 @@ abstract class AbstractIntegrationTest {
     /**
      * Specifies a mocked set of exchange rates to be used by the system
      */
-    protected final fun mockExchangeRates(rates: Map<String, Double>) {
+    protected final fun mockExchangeRates(rates: Map<String, BigDecimal>) {
         Mockito.`when`(exchangeRateSynchronizer.fetch()).thenReturn(ExchangeRates(rates))
         updateExchangeRates()
     }

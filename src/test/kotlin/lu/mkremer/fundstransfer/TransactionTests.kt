@@ -23,13 +23,14 @@ class TransactionTests: AbstractIntegrationTest() {
 	companion object {
 		// To not rely on an external service during integration tests, the exchange rates
 		// used in these tests are mocked using the following values:
-		private const val EUR_TO_JPY = 160.5
-		private const val EUR_TO_CHF = 0.96
+		private val EUR_TO_EUR = "1.0".toBigDecimal()
+		private val EUR_TO_JPY = "160.5".toBigDecimal()
+		private val EUR_TO_CHF = "0.96".toBigDecimal()
 	}
 
 	@Test
 	fun testTransferMoneyWithSameCurrenciesEverywhere() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		testMoneyTransfer(
 			debitAccountCurrency = "EUR",
@@ -45,7 +46,7 @@ class TransactionTests: AbstractIntegrationTest() {
 	@Test
 	fun testTransferMoneyWithSameCurrenciesInBothAccounts() {
 		mockExchangeRates(mapOf(
-			"EUR" to 1.0,
+			"EUR" to EUR_TO_EUR,
 			"JPY" to EUR_TO_JPY,
 		))
 
@@ -63,7 +64,7 @@ class TransactionTests: AbstractIntegrationTest() {
 	@Test
 	fun testTransferMoneyWithDifferentCurrenciesInBothAccounts() {
 		mockExchangeRates(mapOf(
-			"EUR" to 1.0,
+			"EUR" to EUR_TO_EUR,
 			"JPY" to EUR_TO_JPY,
 			"CHF" to EUR_TO_CHF,
 		))
@@ -210,7 +211,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testDepositMoneyOnUnknownAccount() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		postRequestExpectingStatus(
 			path = "/transaction/deposit",
@@ -225,7 +226,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testWithdrawMoneyWithMissingExchangeRates() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		val account = createAccount("EUR")
 
@@ -250,7 +251,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testWithdrawMoneyFromUnknownAccount() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		postRequestExpectingStatus(
 			path = "/transaction/withdraw",
@@ -265,7 +266,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testTransferMoneyWithMissingExchangeRates() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		val debitAccount = createAccount("EUR")
 		val creditAccount = createAccount("EUR")
@@ -292,7 +293,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testTransferMoneyFromUnknownDebitAccount() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		val creditAccount = createAccount("EUR")
 
@@ -310,7 +311,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 	@Test
 	fun testTransferMoneyFromUnknownCreditAccount() {
-		mockExchangeRates(mapOf("EUR" to 1.0))
+		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
 
 		val debitAccount = createAccount("EUR")
 

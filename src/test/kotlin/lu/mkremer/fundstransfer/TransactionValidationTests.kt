@@ -45,7 +45,7 @@ class TransactionValidationTests: AbstractIntegrationTest() {
     fun setupStaticExchangeRates() {
         // For the sake of these tests, we just specify some static exchange
         // rates to make the currency validation work
-        mockExchangeRates(mapOf("EUR" to 1.0))
+        mockExchangeRates(mapOf("EUR" to "1.0".toBigDecimal()))
     }
 
     @ParameterizedTest

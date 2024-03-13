@@ -10,7 +10,7 @@ import java.math.RoundingMode
  * conversions on its own
  */
 class ExchangeRates(
-    private val rates: Map<String, Double>,
+    private val rates: Map<String, BigDecimal>,
 ) {
 
     /**
@@ -32,13 +32,29 @@ class ExchangeRates(
             // First, we need to find a common ground before we can do the conversion.
             // For this, we choose the base currency of the external service.
             val rateOfDebitCurrency = rates[amount.currency] ?: throw UnsupportedCurrenciesException(amount.currency)
-            val baseAmount = amount.amount.divide(BigDecimal(rateOfDebitCurrency), 4, RoundingMode.HALF_UP)
+            val baseAmount = amount.amount.divide(rateOfDebitCurrency, 9, RoundingMode.HALF_UP)
 
             // Second, we can now convert the amount from the base currency to the
             // target currency
             val rateOfCreditCurrency = rates[toCurrency] ?: throw UnsupportedCurrenciesException(toCurrency)
-            baseAmount.multiply(BigDecimal(rateOfCreditCurrency))
+            baseAmount.multiply(rateOfCreditCurrency)
         }
+    }
+
+    companion object {
+
+        fun fromDoubleRates(rates: Map<String, Double>): ExchangeRates = ExchangeRates(
+            rates.mapValues {
+                // It is safer to first convert the double to a string, and then pass this string
+                // to the constructor of BigDecimal. Like this, we can have the most accurate
+                // representation of the decimal number in a BigDecimal, and we avoid rounding
+                // issues when passing the double directly to the constructor of BigDecimal.
+                // e.g. BigDecimal(0.96)   -> 0.95999999999999996447286321199499070644378662109375
+                //      BigDecimal("0.96") -> 0.96
+                BigDecimal(it.value.toString())
+            }
+        )
+
     }
 
 }
