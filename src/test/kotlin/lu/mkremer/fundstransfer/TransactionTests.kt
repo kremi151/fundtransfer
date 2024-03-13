@@ -5,6 +5,7 @@ import lu.mkremer.fundstransfer.datamodel.dto.MonetaryAmountDTO
 import lu.mkremer.fundstransfer.datamodel.request.AccountBalanceRequest
 import lu.mkremer.fundstransfer.datamodel.request.CreateAccountRequest
 import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
+import lu.mkremer.fundstransfer.util.Assertions.assertComparableEquals
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -87,26 +88,26 @@ class TransactionTests: AbstractIntegrationTest() {
 		val account = createAccount("JPY")
 
 		var updatedAccount = depositMoney(account.id, 1000.8.toBigDecimal(), "JPY")
-		assertEquals(updatedAccount.balance, BigDecimal("1000.80"), "The right amount of money was deposited")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("1000.80"), updatedAccount.balance, "The right amount of money was deposited")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 
 		// Also check if getting the accounts returns the expected amount of money
 		updatedAccount = getAccount(account.id)
-		assertEquals(updatedAccount.balance, BigDecimal("1000.80"), "The right amount of money was deposited")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("1000.80"), updatedAccount.balance, "The right amount of money was deposited")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 
 		updatedAccount = withdrawMoney(account.id, 180.6.toBigDecimal(), "JPY")
-		assertEquals(updatedAccount.balance, BigDecimal("820.20"), "The right amount of money was withdrawn")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("820.20"), updatedAccount.balance, "The right amount of money was withdrawn")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 
 		// Also check if getting the accounts returns the expected amount of money
 		updatedAccount = getAccount(account.id)
-		assertEquals(updatedAccount.balance, BigDecimal("820.20"), "The right amount of money was deposited")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("820.20"), updatedAccount.balance, "The right amount of money was deposited")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 	}
 
 	@Test
@@ -116,15 +117,15 @@ class TransactionTests: AbstractIntegrationTest() {
 		val account = createAccount("JPY")
 
 		var updatedAccount = depositMoney(account.id, 1000.0.toBigDecimal(), "JPY")
-		assertEquals(updatedAccount.balance, BigDecimal("1000.00"), "The right amount of money was deposited")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("1000.00"), updatedAccount.balance, "The right amount of money was deposited")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 
 		// Also check if getting the accounts returns the expected amount of money
 		updatedAccount = getAccount(account.id)
-		assertEquals(updatedAccount.balance, BigDecimal("1000.00"), "The right amount of money was deposited")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("1000.00"), updatedAccount.balance, "The right amount of money was deposited")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 
 		val validationError = attemptToWithdrawMoney(account.id, 1000.1.toBigDecimal(), "JPY")
 
@@ -133,9 +134,9 @@ class TransactionTests: AbstractIntegrationTest() {
 
 		// Check if getting the accounts returns the unchanged amount of money
 		updatedAccount = getAccount(account.id)
-		assertEquals(updatedAccount.balance, BigDecimal("1000.00"), "The right amount of money was deposited")
-		assertEquals(updatedAccount.currency, "JPY", "The currency must not change")
-		assertEquals(updatedAccount.id, account.id, "The returned account id must not change")
+		assertComparableEquals(BigDecimal("1000.00"), updatedAccount.balance, "The right amount of money was deposited")
+		assertEquals("JPY", updatedAccount.currency, "The currency must not change")
+		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 	}
 
 	@Test
@@ -146,11 +147,11 @@ class TransactionTests: AbstractIntegrationTest() {
 		val creditAccount = createAccount("JPY")
 
 		var updatedDebitAccount = depositMoney(debitAccount.id, 2000.0.toBigDecimal(), "JPY")
-		assertEquals(BigDecimal("2000.00"), updatedDebitAccount.balance, "Balance was updated correctly")
+		assertComparableEquals(BigDecimal("2000.00"), updatedDebitAccount.balance, "Balance was updated correctly")
 		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
 
 		var updatedCreditAccount = getAccount(creditAccount.id)
-		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance of credit account must still be 0")
+		assertComparableEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance of credit account must still be 0")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 
 		val validationError = attemptToTransferMoney(
@@ -164,11 +165,11 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertNull(validationError.fieldErrors)
 
 		updatedDebitAccount = getAccount(debitAccount.id)
-		assertEquals(BigDecimal("2000.00"), updatedDebitAccount.balance, "Balance was not updated")
+		assertComparableEquals(BigDecimal("2000.00"), updatedDebitAccount.balance, "Balance was not updated")
 		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
 
 		updatedCreditAccount = getAccount(creditAccount.id)
-		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance was not updated")
+		assertComparableEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance was not updated")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 	}
 
@@ -346,11 +347,11 @@ class TransactionTests: AbstractIntegrationTest() {
 		val creditAccount = createAccount(creditAccountCurrency)
 
 		var updatedDebitAccount = depositMoney(debitAccount.id, initialDeposit.amount, initialDeposit.currency)
-		assertEquals(expectedInitialBalanceAfterDeposit, updatedDebitAccount.balance, "Balance was updated correctly")
+		assertComparableEquals(expectedInitialBalanceAfterDeposit, updatedDebitAccount.balance)
 		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
 
 		var updatedCreditAccount = getAccount(creditAccount.id)
-		assertEquals(BigDecimal("0.00"), updatedCreditAccount.balance, "Balance of credit account must still be 0")
+		assertComparableEquals(BigDecimal.ZERO, updatedCreditAccount.balance, "Balance of credit account must still be 0")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 
 		transferMoney(
@@ -361,11 +362,11 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 
 		updatedDebitAccount = getAccount(debitAccount.id)
-		assertEquals(expectedDebitAccountBalanceAfterTransfer, updatedDebitAccount.balance, "Balance was updated correctly")
+		assertComparableEquals(expectedDebitAccountBalanceAfterTransfer, updatedDebitAccount.balance, "Balance was updated correctly")
 		assertEquals(debitAccount.currency, updatedDebitAccount.currency, "Currency of debit account must not change")
 
 		updatedCreditAccount = getAccount(creditAccount.id)
-		assertEquals(expectedCreditAccountBalanceAfterTransfer, updatedCreditAccount.balance, "Balance was updated correctly")
+		assertComparableEquals(expectedCreditAccountBalanceAfterTransfer, updatedCreditAccount.balance, "Balance was updated correctly")
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 	}
 
@@ -382,7 +383,7 @@ class TransactionTests: AbstractIntegrationTest() {
 
 		assertTrue(account.id.matches("^[0-9]{9}$".toRegex()), "The account ID must be 9 digits long")
 		assertEquals(currency, account.currency, "The currency must be the one that was set in the request")
-		assertEquals(BigDecimal(0.0), account.balance, "The starting balance must be 0")
+		assertComparableEquals(BigDecimal.ZERO, account.balance, "The starting balance must be 0")
 
 		return account
 	}

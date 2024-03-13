@@ -18,6 +18,6 @@ class Account(
     var balance: BigDecimal = DEFAULT_BALANCE,
 ) {
     companion object {
-        val DEFAULT_BALANCE = BigDecimal(0.0)
+        val DEFAULT_BALANCE: BigDecimal = BigDecimal.ZERO
     }
 }

@@ -10,7 +10,7 @@ import java.math.RoundingMode
  * conversions on its own
  */
 class ExchangeRates(
-    private val rates: Map<String, BigDecimal>,
+    val rates: Map<String, BigDecimal>,
 ) {
 
     /**
