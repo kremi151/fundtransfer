@@ -29,7 +29,7 @@ While this may not be a problem when only having a few transfer requests every o
 Potential issues would be performance bottleneck, since every incoming request would need to wait for an additional outgoing request to the external service.
 Also, rate limitations on external services may reduce access after a while due to too many requests within a short time frame.
 
-To solve this, I opted for having caching the exchange rates locally in-memory, and refresh them every 5 minutes (which is configurable).
+To solve this, I opted for having caching the exchange rates locally in-memory, and refresh them every 20 seconds (which is configurable).
 This should maintain an acceptable balance between reducing the amount of outgoing requests to external services and having up-to-date exchange rates.
 
 ## Account IDs
