@@ -79,7 +79,7 @@ class AccountController {
             ),
         ])
     fun getAccount(
-        @Parameter(description = "The account ID") @PathVariable("id") id: Int,
+        @Parameter(description = "The account ID") @PathVariable("id") id: Int, // TODO: Validation
     ): ResponseEntity<AccountDTO> {
         return accountService.getAccount(id)
             ?.let { ResponseEntity.ok(it) }
