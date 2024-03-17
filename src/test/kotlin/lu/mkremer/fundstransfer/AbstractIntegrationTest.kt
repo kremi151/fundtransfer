@@ -26,7 +26,13 @@ import java.util.concurrent.TimeUnit
  * Common base class for integration tests, which takes case about configuring
  * the Tomcat port and setting the test profile.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = [
+        // Use an in-memory DB only during tests, which is not written to the file system
+        "spring.datasource.url=jdbc:h2:mem:fundtransfer_db",
+    ],
+)
 @ActiveProfiles("test")
 abstract class AbstractIntegrationTest {
 

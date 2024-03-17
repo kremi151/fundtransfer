@@ -8,9 +8,15 @@ import lu.mkremer.fundstransfer.datamodel.request.MoneyTransferRequest
 import lu.mkremer.fundstransfer.util.Assertions.assertComparableEquals
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
+import java.lang.invoke.MethodHandles
 import java.math.BigDecimal
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Integration tests that cover money transfer between two accounts, in
@@ -22,6 +28,8 @@ import java.math.BigDecimal
 class TransactionTests: AbstractIntegrationTest() {
 
 	companion object {
+		private val LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass())
+
 		// To not rely on an external service during integration tests, the exchange rates
 		// used in these tests are mocked using the following values:
 		private val EUR_TO_EUR = "1.0".toBigDecimal()
@@ -332,6 +340,124 @@ class TransactionTests: AbstractIntegrationTest() {
 			),
 			expectedStatus = HttpStatus.NOT_FOUND,
 		)
+	}
+
+	/**
+	 * This test is testing the case where multiple money transfers are being
+	 * performed on common accounts, concurrently.
+	 * For this, 9 accounts are created, each having a start capital of
+	 * 100 Euros, converted to their individual currencies.
+	 * The supported currencies for this test are Euro, Japanese Yen and
+	 * Swiss Francs, each having 3 accounts using that currency.
+	 * Every account will have a dedicated thread performing money transfers
+	 * to the other accounts (4 times per credit account).
+	 * In the end, we verify that no transfer request failed, and whether the
+	 * end balances of the accounts are as expected.
+	 * Since no randomization is used, and the only uncertainty being the
+	 * execution order of transfers due to multithreading, the expected end
+	 * balances are deterministic.
+	 */
+	@Test
+	fun testConcurrentMoneyTransfer() {
+		val exchangeRates = mapOf(
+			"EUR" to EUR_TO_EUR,
+			"JPY" to EUR_TO_JPY,
+			"CHF" to EUR_TO_CHF,
+		)
+		mockExchangeRates(exchangeRates)
+
+		val numAccounts = exchangeRates.size * exchangeRates.size
+
+		val supportedCurrencies = exchangeRates.keys.toList()
+
+		// Prepare accounts
+		val accounts = (0 until numAccounts).map {
+			createAccount(supportedCurrencies[it % supportedCurrencies.size]).let { account ->
+				// Start capital of 100 Euro
+				val updatedAccount = depositMoney(account.id, 100.0.toBigDecimal(), "EUR")
+				assertEquals(account.id, updatedAccount.id)
+				assertEquals(account.currency, updatedAccount.currency)
+				assertComparableEquals(exchangeRates[account.currency]!!.multiply(100.0.toBigDecimal()), updatedAccount.balance)
+
+				updatedAccount
+			}
+		}
+
+		// Verify whether every account has the expected start capital
+		val expectedStartCapitalPerBalance = mapOf(
+			"EUR" to 100.0.toBigDecimal(),
+			"CHF" to 96.0.toBigDecimal(),
+			"JPY" to 16050.0.toBigDecimal(),
+		)
+		accounts.forEach {
+			val expectedStartCapital = expectedStartCapitalPerBalance[it.currency]
+			assertNotNull(expectedStartCapital, "Expected start capital must not be null")
+			assertComparableEquals(expectedStartCapital!!, it.balance, "Account must have the expected start capital")
+		}
+
+		val executor = Executors.newFixedThreadPool(numAccounts)
+		val countDownLatch = CountDownLatch(numAccounts)
+		val failedTransfers = AtomicInteger(0)
+
+		try {
+			// Spawn one thread per account, which transfer money of a value of
+			// 2 (in the currency of the debit account) to the other accounts,
+			// in total 4 times.
+			for (i in 0 until numAccounts) {
+				executor.submit {
+					val debitAccount = accounts[i]
+					// Build the sequence of credit accounts to be used in this
+					// thread, by repeating and account different to the debit
+					// one 4 times in a zigzag fashion.
+					val creditAccounts = accounts
+						.filterIndexed { index, _ -> index != i }
+						.let {
+							it + it.reversed() + it + it.reversed()
+						}
+					try {
+						creditAccounts.forEach { creditAccount ->
+							try {
+								// Transfer an amount of 2 in the debit account's currency
+								transferMoney(
+									debitAccountId = debitAccount.id,
+									creditAccountId = creditAccount.id,
+									amount = 2.0.toBigDecimal(),
+									debitAccount.currency,
+								)
+							} catch (e: Exception) {
+								LOGGER.error("Concurrent transfer failed", e)
+								failedTransfers.incrementAndGet()
+							}
+						}
+					} finally {
+					    countDownLatch.countDown()
+					}
+				}
+			}
+		} finally {
+			countDownLatch.await()
+		    executor.shutdown()
+			executor.awaitTermination(1, TimeUnit.SECONDS)
+		}
+
+		// Retrieve updated account information
+		val updatedAccounts = accounts.map {
+			getAccount(it.id)
+		}
+
+		assertEquals(0, failedTransfers.get(), "No transfer should have failed")
+
+		// Verify whether the accounts have the expected balance after the concurrent transfers
+		val expectedBalancePerCurrency = mapOf(
+			"EUR" to 77.08.toBigDecimal(),
+			"CHF" to 71.16.toBigDecimal(),
+			"JPY" to 23866.44.toBigDecimal(),
+		)
+		updatedAccounts.forEach {
+			val expectedBalance = expectedBalancePerCurrency[it.currency]
+			assertNotNull(expectedBalance, "Expected balance must not be null")
+			assertComparableEquals(expectedBalance!!, it.balance, "Account must have the expected balance")
+		}
 	}
 
 	private fun testMoneyTransfer(
