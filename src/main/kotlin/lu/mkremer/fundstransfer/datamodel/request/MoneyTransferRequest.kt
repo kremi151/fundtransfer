@@ -23,6 +23,6 @@ class MoneyTransferRequest(
 
     @Schema(description = "The currency of the money to transfer", required = true)
     @Currency
-    val currency: String, // TODO: Check if actually needed
+    val currency: String,
 
 )
