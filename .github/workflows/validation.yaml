@@ -4,6 +4,12 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  # Required for reading the repo
+  contents: read
+  # Used for the publication of test results
+  checks: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
