@@ -5,6 +5,8 @@ Every account has its own currency and balance, and is identified by a 9-digit n
 To keep things simple, there is no authentication mechanism implemented, meaning that requests can be executed without the need of logging in.
 The application has an in-memory H2 database for storing accounts.
 
+I noted down some decisions I took in [DECISIONS.md](DECISIONS.md).
+
 ## Concepts
 
 Every account is identified by a 9-digit numeric ID, ranging from 000000001 to 999999999.
