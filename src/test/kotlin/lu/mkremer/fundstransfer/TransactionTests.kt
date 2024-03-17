@@ -37,6 +37,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		private val EUR_TO_CHF = "0.96".toBigDecimal()
 	}
 
+	/**
+	 * Test for verifying whether a money transfer with the same currency used
+	 * in both debit and credit account works.
+	 */
 	@Test
 	fun testTransferMoneyWithSameCurrenciesEverywhere() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
@@ -52,6 +56,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a money transfer with a different currency
+	 * thant used in both debit and credit account works.
+	 */
 	@Test
 	fun testTransferMoneyWithSameCurrenciesInBothAccounts() {
 		mockExchangeRates(mapOf(
@@ -70,6 +78,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a money transfer between two accounts with
+	 * different currencies works.
+	 */
 	@Test
 	fun testTransferMoneyWithDifferentCurrenciesInBothAccounts() {
 		mockExchangeRates(mapOf(
@@ -89,6 +101,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a money deposit and withdraw on/from an
+	 * account works.
+	 */
 	@Test
 	fun testDepositAndWithdrawMoney() {
 		mockExchangeRates(mapOf("JPY" to EUR_TO_JPY))
@@ -118,6 +134,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 	}
 
+	/**
+	 * Test for verifying whether a withdrawal from an account with insufficient
+	 * balance results in an error.
+	 */
 	@Test
 	fun testDepositAndWithdrawMoneyWithInsufficientMoney() {
 		mockExchangeRates(mapOf("JPY" to EUR_TO_JPY))
@@ -147,6 +167,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(account.id, updatedAccount.id, "The returned account id must not change")
 	}
 
+	/**
+	 * Test for verifying whether a transfer from an account with insufficient
+	 * balance results in an error.
+	 */
 	@Test
 	fun testTransferMoneyWithInsufficientMoneyInDebitAccount() {
 		mockExchangeRates(mapOf("JPY" to EUR_TO_JPY))
@@ -181,6 +205,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertEquals(creditAccount.currency, updatedCreditAccount.currency, "Currency of credit account must not change")
 	}
 
+	/**
+	 * Test for verifying whether a transfer from and to the same account
+	 * results in an error.
+	 */
 	@Test
 	fun testTransferringMoneyToTheSameAccount() {
 		mockExchangeRates(mapOf("CHF" to EUR_TO_CHF))
@@ -201,6 +229,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		assertNull(response.fieldErrors)
 	}
 
+	/**
+	 * Test for verifying whether a deposit fails when the exchange rates could
+	 * not be fetched.
+	 */
 	@Test
 	fun testDepositMoneyWithMissingExchangeRates() {
 		mockFailedExchangeRatesFetch()
@@ -218,6 +250,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a deposit on an unknown account results in
+	 * an error.
+	 */
 	@Test
 	fun testDepositMoneyOnUnknownAccount() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
@@ -233,6 +269,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a withdrawal fails when the exchange rates
+	 * could not be fetched.
+	 */
 	@Test
 	fun testWithdrawMoneyWithMissingExchangeRates() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
@@ -258,6 +298,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a withdrawal from an unknown account results
+	 * in an error.
+	 */
 	@Test
 	fun testWithdrawMoneyFromUnknownAccount() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
@@ -273,6 +317,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a transfer fails when the exchange rates could
+	 * not be fetched.
+	 */
 	@Test
 	fun testTransferMoneyWithMissingExchangeRates() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
@@ -300,6 +348,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a transfer from an unknown account results in
+	 * an error.
+	 */
 	@Test
 	fun testTransferMoneyFromUnknownDebitAccount() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))
@@ -318,6 +370,10 @@ class TransactionTests: AbstractIntegrationTest() {
 		)
 	}
 
+	/**
+	 * Test for verifying whether a transfer to an unknown account results in
+	 * an error.
+	 */
 	@Test
 	fun testTransferMoneyFromUnknownCreditAccount() {
 		mockExchangeRates(mapOf("EUR" to EUR_TO_EUR))

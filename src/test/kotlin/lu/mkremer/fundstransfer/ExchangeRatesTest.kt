@@ -18,6 +18,10 @@ class ExchangeRatesTest {
         private val EUR_TO_CHF = "0.96".toBigDecimal()
     }
 
+    /**
+     * Set of tests for verifying correct conversions of money between
+     * different currencies.
+     */
     @ParameterizedTest
     @CsvSource(value = [
         "EUR, 100.0,                CHF, 96.0",
@@ -47,6 +51,10 @@ class ExchangeRatesTest {
         assertComparableEquals(expectedResult.toBigDecimal(), result)
     }
 
+    /**
+     * Tet for ensuring parsing of [Double] exchange rates as [BigDecimal]
+     * with correct precision (no rounding issues).
+     */
     @Test
     fun testExchangeRatesPrecision() {
         val rawExchangeRates = mapOf(

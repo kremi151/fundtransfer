@@ -48,6 +48,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         mockExchangeRates(mapOf("EUR" to "1.0".toBigDecimal()))
     }
 
+    /**
+     * Test for verifying whether a deposit request with a wrongly formatted
+     * account ID results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "1234", "1234567890", "12345678p"])
     fun testDepositMoneyWithInvalidAccountId(accountId: String) {
@@ -64,6 +68,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a deposit request with a wrongly formatted
+     * or unsupported currency results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testDepositMoneyWithInvalidCurrency(currency: String) {
@@ -80,6 +88,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a deposit request with an invalid amount
+     * results in an error.
+     */
     @ParameterizedTest
     @ValueSource(doubles = [0.0, -1.0, -9999.9999])
     fun testDepositMoneyWithInvalidAmount(amount: Double) {
@@ -96,6 +108,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a deposit request with multiple invalid
+     * inputs results in an error.
+     */
     @Test
     fun testDepositMoneyWithMultipleInvalidProperties() {
         val error = attemptToDepositMoney(
@@ -115,6 +131,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a withdrawal request with a wrongly formatted
+     * account ID results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "1234", "1234567890", "12345678p"])
     fun testWithdrawMoneyWithInvalidAccountId(accountId: String) {
@@ -131,6 +151,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a withdrawal request with a wrongly formatted
+     * or unsupported currency results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testWithdrawMoneyWithInvalidCurrency(currency: String) {
@@ -147,6 +171,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a withdrawal request with an invalid amount
+     * results in an error.
+     */
     @ParameterizedTest
     @ValueSource(doubles = [0.0, -1.0, -9999.9999])
     fun testWithdrawMoneyWithInvalidAmount(amount: Double) {
@@ -163,6 +191,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a withdrawal request with multiple invalid
+     * inputs results in an error.
+     */
     @Test
     fun testWithdrawMoneyWithMultipleInvalidProperties() {
         val error = attemptToWithdrawMoney(
@@ -182,6 +214,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a transfer request with a wrongly formatted
+     * debit account ID results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "1234", "1234567890", "12345678p"])
     fun testTransferMoneyWithInvalidDebitAccountId(accountId: String) {
@@ -199,6 +235,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a transfer request with a wrongly formatted
+     * credit account ID results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "1234", "1234567890", "12345678p"])
     fun testTransferMoneyWithInvalidCreditAccountId(accountId: String) {
@@ -216,6 +256,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a transfer request with a wrongly formatted
+     * or unsupported currency results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testTransferMoneyWithInvalidCurrency(currency: String) {
@@ -233,6 +277,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a transfer request with an invalid amount
+     * results in an error.
+     */
     @ParameterizedTest
     @ValueSource(doubles = [0.0, -1.0, -9999.9999])
     fun testTransferMoneyWithInvalidAmount(amount: Double) {
@@ -250,6 +298,10 @@ class TransactionValidationTests: AbstractIntegrationTest() {
         verify(accountRepository, never()).saveAll(any<List<Account>>())
     }
 
+    /**
+     * Test for verifying whether a transfer request with multiple invalid
+     * inputs results in an error.
+     */
     @Test
     fun testTransferMoneyWithMultipleInvalidProperties() {
         val error = attemptToTransferMoney(

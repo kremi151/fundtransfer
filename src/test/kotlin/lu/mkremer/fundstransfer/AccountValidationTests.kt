@@ -40,6 +40,10 @@ class AccountValidationTests: AbstractIntegrationTest() {
         mockExchangeRates(mapOf("EUR" to "1.0".toBigDecimal()))
     }
 
+    /**
+     * Test for ensuring that creating an account with a wrongly formatted
+     * or unsupported currency string results in an error.
+     */
     @ParameterizedTest
     @ValueSource(strings = ["", "Euro", "eur", "EURO", "eu", "EU", "XYZ"])
     fun testCreateAccountWithInvalidCurrency(currency: String) {
